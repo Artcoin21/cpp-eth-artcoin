@@ -9,7 +9,7 @@
 	url = https://github.com/ethereum/cable
 [submodule "ethash"]
 	path = ethash
-	url = https://github.com/chfast/ethash
+	url = https://github.com/chfast/ethash.git
 [submodule "scripts/dopple"]
 	path = scripts/dopple
 	url = https://github.com/ethereum/dopple
