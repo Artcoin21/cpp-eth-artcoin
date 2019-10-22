@@ -9,7 +9,7 @@
 	url = https://github.com/chfast/ethash.git
 [submodule "scripts/dopple"]
 	path = scripts/dopple
-	url = https://github.com/ethereum/dopple
+	url = https://github.com/ethereum/dopple.git
 [submodule "test/jsontests"]
 	path = test/jsontests
 	url = https://github.com/ethereum/tests.git
