@@ -1,6 +1,3 @@
-[submodule "test/jsontests"]
-	path = test/jsontests
-	url = https://github.com/ethereum/tests.git
 [submodule "evmc"]
 	path = evmc
 	url = https://github.com/ethereum/evmc.git
@@ -13,3 +10,6 @@
 [submodule "scripts/dopple"]
 	path = scripts/dopple
 	url = https://github.com/ethereum/dopple
+[submodule "test/jsontests"]
+	path = test/jsontests
+	url = https://github.com/ethereum/tests.git
