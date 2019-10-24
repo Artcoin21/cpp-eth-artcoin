@@ -31,11 +31,9 @@ set -e -x
 mkdir -p build
 cd build
 if [ $(uname -s) == "Linux" ]; then
-#	Disabling while llvm-3.9 package is broken
-#    cmake .. -DCMAKE_BUILD_TYPE=$1 -DCOVERAGE=ON -DEVMJIT=ON -DLLVM_DIR=/usr/lib/llvm-3.9/lib/cmake/llvm
-    cmake .. -DCMAKE_BUILD_TYPE=$1 -DCOVERAGE=ON
+    cmake .. -DCMAKE_BUILD_TYPE=$1 -DTESTS=$2 -DCOVERAGE=On -DEVMJIT=On -DLLVM_DIR=/usr/lib/llvm-3.9/lib/cmake/llvm
 else
-    cmake .. -DCMAKE_BUILD_TYPE=$1 -DCOVERAGE=ON
+    cmake .. -DCMAKE_BUILD_TYPE=$1 -DTESTS=$2 -DCOVERAGE=On
 fi
 
 make -j2

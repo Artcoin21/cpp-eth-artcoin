@@ -15,9 +15,7 @@ git clone --recursive --depth 1 --single-branch https://github.com/ethereum/cpp-
 cd tests
 testHead=$(git rev-parse HEAD)
 cd ..
-cd tests/RPCTests
-npm install
-cd $workdir/cpp-ethereum
+cd cpp-ethereum
 cppHead=$(git rev-parse HEAD)
 
 #Prepare test results
@@ -31,11 +29,7 @@ echo "cpp-ethereum repository at commit $cppHead"
 echo "tests repository at commit $testHead"
 exec 2> $workdir/testlog.txt
 timestart=$(date +%s.%N)
-TMPDIR=/dev/shm
 test/testeth -- --all --exectimelog
-cd $workdir/tests/RPCTests
-echo "#--------------RPC TESTS--------------"
-node main.js $workdir/cpp-ethereum/build/eth/eth
 timeend=$(date +%s.%N)
 date=$(date +%Y-%m-%d)
 
@@ -58,5 +52,5 @@ cat buildlog.txt
 ) > report.txt
 
 # Send mail
-RECIPIENTS="dimitry@ethereum.org pawel@ethereum.org chris@ethereum.org andrei@ethereum.org yoichi@ethereum.org"
+RECIPIENTS="dimitry@ethereum.org pawel@ethereum.org chris@ethereum.org andrei@ethereum.org"
 mail < report.txt -s "cpp-ethereum alltests $date" $RECIPIENTS

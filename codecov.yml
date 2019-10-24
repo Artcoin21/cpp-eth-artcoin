@@ -1,5 +1,5 @@
 codecov:
-  branch: master
+  branch: develop
 coverage:
   range: 50...100
   notify:
@@ -10,25 +10,15 @@ coverage:
   status:
     patch:
       default:
-        target: 50
+        target: 80
     project:
       default:
         target: auto
-        threshold: 0.05
-      app:
-        target: auto
-        threshold: 0.05
-        paths: "!test/"
-      tests:
-        target: auto
-        paths: "test/"
     changes:
       default:
         enabled: no
 comment:
-  layout: "reach, diff"
+  layout: header, diff, changes, sunburst, suggestions, tree
 flags:
   alltests:
     joined: false
-ignore:
-  - test/tools/fuzzTesting/fuzzHelper.cpp

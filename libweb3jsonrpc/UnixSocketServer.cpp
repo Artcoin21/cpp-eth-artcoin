@@ -22,12 +22,14 @@ along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>.
 #if !defined(_WIN32)
 
 #include "UnixSocketServer.h"
+#include <cstdlib>
 #include <sys/socket.h>
+#include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string>
 #include <libdevcore/Guards.h>
 #include <libdevcore/FileSystem.h>
-#include <boost/filesystem/path.hpp>
 
 // "Mac OS X does not support the flag MSG_NOSIGNAL but we have an equivalent."
 // See http://lists.apple.com/archives/macnetworkprog/2002/Dec/msg00091.html
@@ -40,24 +42,26 @@ along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 using namespace jsonrpc;
 using namespace dev;
-namespace fs = boost::filesystem;
 
-namespace
-{
-size_t const c_socketPathMaxLength = sizeof(sockaddr_un::sun_path) / sizeof(sockaddr_un::sun_path[0]);
+int const c_pathMaxSize = sizeof(sockaddr_un::sun_path)/sizeof(sockaddr_un::sun_path[0]);
 
-fs::path getIpcPathOrDataDir()
+string ipcSocketPath()
 {
-	// On Unix use datadir as default IPC path.
-	fs::path path = getIpcPath();
-	if (path.empty())
-		return getDataDir();
-	return path;
-}
+#ifdef __APPLE__
+	// A bit hacky, but backwards compatible: If we did not change the default data dir,
+	// put the socket in ~/Library/Ethereum, otherwise in the set data dir.
+	string path = getIpcPath();
+	if (path == getDefaultDataDir())
+		return getenv("HOME") + string("/Library/Ethereum");
+	else
+		return path;
+#else
+	return getIpcPath();
+#endif
 }
 
 UnixDomainSocketServer::UnixDomainSocketServer(string const& _appId):
-	IpcServerBase((getIpcPathOrDataDir() / fs::path(_appId + ".ipc")).string().substr(0, c_socketPathMaxLength))
+	IpcServerBase(string(getIpcPath() + "/" + _appId + ".ipc").substr(0, c_pathMaxSize))
 {
 }
 
@@ -82,9 +86,8 @@ bool UnixDomainSocketServer::StartListening()
 #ifdef __APPLE__
 		m_address.sun_len = m_path.size() + 1;
 #endif
-		strncpy(m_address.sun_path, m_path.c_str(), c_socketPathMaxLength);
+		strncpy(m_address.sun_path, m_path.c_str(), c_pathMaxSize);
 		::bind(m_socket, reinterpret_cast<sockaddr*>(&m_address), sizeof(sockaddr_un));
-		fs::permissions(m_path, fs::owner_read | fs::owner_write);
 		listen(m_socket, 128);
 	}
 	return IpcServerBase::StartListening();
@@ -114,37 +117,32 @@ void UnixDomainSocketServer::Listen()
 			DEV_GUARDED(x_sockets)
 				m_sockets.insert(connection);
 
-			// Handle the request in a new detached thread.
-			std::thread{[this, connection]
-			{
-				GenerateResponse(connection);
-				CloseConnection(connection);
-			}}.detach();
+			std::thread handler([this, connection](){ GenerateResponse(connection); });
+			handler.detach();
 		}
 	}
 }
 
 void UnixDomainSocketServer::CloseConnection(int _socket)
 {
-	shutdown(_socket, SHUT_RDWR);
 	close(_socket);
 }
 
 
 size_t UnixDomainSocketServer::Write(int _connection, string const& _data)
 {
-	ssize_t r = send(_connection, _data.data(), _data.size(), MSG_NOSIGNAL);
-	if (r < 0)
-		return 0;
-	return static_cast<size_t>(r);
+	int r = send(_connection, _data.data(), _data.size(), MSG_NOSIGNAL);
+	if (r > 0)
+		return r;
+	return 0;
 }
 
 size_t UnixDomainSocketServer::Read(int _connection, void* _data, size_t _size)
 {
-	ssize_t r = read(_connection, _data, _size);
-	if (r < 0)
-		return 0;
-	return static_cast<size_t>(r);
+	int r = read(_connection, _data, _size);
+	if (r > 0)
+		return r;
+	return 0;
 }
 
 #endif

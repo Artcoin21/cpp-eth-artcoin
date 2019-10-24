@@ -28,6 +28,7 @@
 #include <vector>
 #include <map>
 #include <chrono>
+#include <libdevcrypto/Common.h>
 #include <libethcore/CommonJS.h>
 #include <libethereum/Transaction.h>
 
@@ -39,6 +40,23 @@ namespace eth
 class KeyManager;
 class Interface;
 
+enum class TransactionRepercussion
+{
+	Unknown,
+	UnknownAccount,
+	Locked,
+	Refused,
+	ProxySuccess,
+	Success
+};
+
+struct TransactionNotification
+{
+	TransactionRepercussion r;
+	h256 hash;
+	Address created;
+};
+
 /**
  * Manages real accounts (where we know the secret key) and proxy accounts (where transactions
  * to be sent from these accounts are forwarded to a proxy on the other side).
@@ -47,18 +65,16 @@ class AccountHolder
 {
 public:
 	explicit AccountHolder(std::function<Interface*()> const& _client): m_client(_client) {}
-	virtual ~AccountHolder() = default;
 
 	virtual AddressHash realAccounts() const = 0;
-	// use m_web3's submitTransaction or use AccountHolder::queueTransaction(_t) to accept.
-	// @returns the authenticated account's Secret (if available) and if the account is a
-	// proxy account.
-	virtual std::pair<bool, Secret> authenticate(dev::eth::TransactionSkeleton const& _t) = 0;
+	// use m_web3's submitTransaction
+	// or use AccountHolder::queueTransaction(_t) to accept
+	virtual TransactionNotification authenticate(dev::eth::TransactionSkeleton const& _t) = 0;
 
 	Addresses allAccounts() const;
 	bool isRealAccount(Address const& _account) const { return realAccounts().count(_account) > 0; }
 	bool isProxyAccount(Address const& _account) const { return m_proxyAccounts.count(_account) > 0; }
-	Address defaultTransactAccount() const;
+	Address const& defaultTransactAccount() const;
 
 	/// Automatically authenticate all transactions for the given account for the next @a _duration
 	/// seconds. Decrypt the key with @a _password if needed. @returns true on success.
@@ -100,9 +116,9 @@ public:
 	{}
 
 	AddressHash realAccounts() const override;
-	std::pair<bool, Secret> authenticate(dev::eth::TransactionSkeleton const& _t) override;
+	TransactionNotification authenticate(dev::eth::TransactionSkeleton const& _t) override;
 
-	bool unlockAccount(Address const& _account, std::string const& _password, unsigned _duration) override;
+	virtual bool unlockAccount(Address const& _account, std::string const& _password, unsigned _duration) override;
 
 private:
 	std::function<std::string(Address)> m_getPassword;
@@ -122,9 +138,8 @@ public:
 
 	void setAccounts(std::vector<dev::KeyPair> const& _accounts)
 	{
-        m_accounts.clear();
-        for (auto const& i : _accounts)
-            m_accounts[i.address()] = i.secret();
+		for (auto const& i: _accounts)
+			m_accounts[i.address()] = i.secret();
 	}
 
 	dev::AddressHash realAccounts() const override
@@ -135,7 +150,9 @@ public:
 		return ret;
 	}
 
-	std::pair<bool, Secret> authenticate(dev::eth::TransactionSkeleton const& _t) override;
+	// use m_web3's submitTransaction
+	// or use AccountHolder::queueTransaction(_t) to accept
+	TransactionNotification authenticate(dev::eth::TransactionSkeleton const& _t) override;
 
 private:
 	std::unordered_map<dev::Address, dev::Secret> m_accounts;

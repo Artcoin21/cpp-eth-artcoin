@@ -1,11 +1,12 @@
-file(GLOB sources "*.cpp" "*.h")
+aux_source_directory(. SRC_LIST)
 
-add_library(p2p ${sources})
-target_link_libraries(p2p PUBLIC devcrypto devcore)
-target_include_directories(p2p SYSTEM PRIVATE ${CRYPTOPP_INCLUDE_DIR})
+file(GLOB HEADERS "*.h")
 
-if(MINIUPNPC)
-    target_link_libraries(p2p PRIVATE "${MINIUPNPC_LIBRARY}")
-    target_include_directories(p2p SYSTEM PRIVATE "${MINIUPNPC_INCLUDE_DIR}")
-    target_compile_definitions(p2p PRIVATE ETH_MINIUPNPC)
-endif()
+add_library(p2p ${SRC_LIST} ${HEADERS})
+
+find_package(Dev)
+
+target_link_libraries(p2p devcrypto devcore)
+target_include_directories(p2p PRIVATE ..)
+target_include_directories(p2p SYSTEM PRIVATE ${CRYPTOPP_INCLUDE_DIR} ${BOOST_INCLUDE_DIR})
+eth_use(p2p OPTIONAL Miniupnpc)

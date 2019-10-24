@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <string>
 #include <thread>
 #include <mutex>
@@ -47,7 +46,7 @@ protected:
 	void GenerateResponse(S _connection);
 
 protected:
-	std::atomic<bool> m_running{false};
+	bool m_running = false;
 	std::string m_path;
 	std::unordered_set<S> m_sockets;
 	std::mutex x_sockets;
